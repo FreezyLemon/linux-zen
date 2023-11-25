@@ -19,10 +19,10 @@ makedepends=(
   xz
 
   # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  texlive-latexextra
+  #graphviz
+  #imagemagick
+  #python-sphinx
+  #texlive-latexextra
 )
 options=('!strip')
 _srcname=linux-${pkgver%.*}
@@ -51,8 +51,7 @@ b2sums=('88fc55107834d4308d33547211a031674ffaa8e48e23d6612ba39430292b18073d49271
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
-# export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
-export KBUILD_BUILD_TIMESTAMP=""
+export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
 
 prepare() {
   cd $_srcname
@@ -83,7 +82,7 @@ prepare() {
 
 build() {
   cd $_srcname
-  make LLVM=1 CC="ccache clang" all
+  make LLVM=1 CC="clang" all
 }
 
 _package() {
