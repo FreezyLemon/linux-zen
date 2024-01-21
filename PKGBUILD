@@ -1,6 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-pkgbase=linux-zen
+pkgbase=linux-zen-custom
 pkgver=6.11.1.zen1
 pkgrel=1
 pkgdesc='Linux ZEN'
@@ -17,13 +17,6 @@ makedepends=(
   python
   tar
   xz
-
-  # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  python-yaml
-  texlive-latexextra
 )
 options=(
   !debug
@@ -46,12 +39,12 @@ sha256sums=('2a372373b4e1eaf55f2a2f104bfa91477ec9b263acf8f3aed08f4d8bdc78ee3d'
             'SKIP'
             '2ca948cacaeceae7d84085fe732e9351b5af9669b1e60a85131b4167e6f09c88'
             'SKIP'
-            '4876747012a2425964e7d9fdb3f08d1073c23782cc126989e944af8fc9c33ae9')
+            '4a67bdbe3c66bbdb71f5fe5119971345afca99e381aaf1cc3830a9b97e4d7a24')
 b2sums=('ac9927d74542a2d244b9d683920363ec2dbbe851ae0e069b278f1a0ba82c58b00f0f0312104b46f1b8c06585c2e6acb7eb1e63bd28499891f629c00f9a32f6b5'
         'SKIP'
         'dae6015ef005af7414a1441c3e1f38c9c36c6c16f363f0cc1da00147a1440ac5b37a7faa60ca563a8b8a45b50d505035739b58ab5853d51488baf7c84744c3f1'
         'SKIP'
-        'c721336413d4108e97bcd21cd8f4443e6872fe56cf392e7e979c000e35281c14a6c936d4b2960af818905050dbc588f546f6c4b71e4105cf33251636ae4b8a71')
+        '076925253389ca11c42def633b7bc7a4b3ee061d21de4ca271641abde35dd1a45cdbfa0c40e10777212efa2e36ce45b364f2e02aee270fd87dbc0cd4a4785b7e')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -76,18 +69,17 @@ prepare() {
 
   echo "Setting config..."
   cp ../config .config
-  make olddefconfig
+  make LLVM=1 olddefconfig
+  #make LLVM=1 xconfig
   diff -u ../config .config || :
 
-  make -s kernelrelease > version
+  make LLVM=1 -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
 }
 
 build() {
   cd $_srcname
-  make all
-  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  make htmldocs
+  make LLVM=1 all
 }
 
 _package() {
@@ -117,13 +109,13 @@ _package() {
   echo "Installing boot image..."
   # systemd expects to find the kernel here to allow hibernation
   # https://github.com/systemd/systemd/commit/edda44605f06a41fb86b7ab8128dcf99161d2344
-  install -Dm644 "$(make -s image_name)" "$modulesdir/vmlinuz"
+  install -Dm644 "$(make LLVM=1 -s image_name)" "$modulesdir/vmlinuz"
 
   # Used by mkinitcpio to name the kernel
   echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
 
   echo "Installing modules..."
-  ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+  ZSTD_CLEVEL=19 make LLVM=1 INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
     DEPMOD=/doesnt/exist modules_install  # Suppress depmod
 
   # remove build link
@@ -139,7 +131,7 @@ _package-headers() {
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux tools/bpf/bpftool/vmlinux.h
+    localversion.* version vmlinux
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/x86" -m644 arch/x86/Makefile
   cp -t "$builddir" -a scripts
@@ -147,9 +139,6 @@ _package-headers() {
 
   # required when STACK_VALIDATION is enabled
   install -Dt "$builddir/tools/objtool" tools/objtool/objtool
-
-  # required when DEBUG_INFO_BTF_MODULES is enabled
-  install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
 
   echo "Installing headers..."
   cp -t "$builddir" -a include
@@ -181,9 +170,6 @@ _package-headers() {
     rm -r "$arch"
   done
 
-  echo "Removing documentation..."
-  rm -r "$builddir/Documentation"
-
   echo "Removing broken symlinks..."
   find -L "$builddir" -type l -printf 'Removing %P\n' -delete
 
@@ -213,29 +199,9 @@ _package-headers() {
   ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-docs() {
-  pkgdesc="Documentation for the $pkgdesc kernel"
-
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
-
-  echo "Installing documentation..."
-  local src dst
-  while read -rd '' src; do
-    dst="${src#Documentation/}"
-    dst="$builddir/Documentation/${dst#output/}"
-    install -Dm644 "$src" "$dst"
-  done < <(find Documentation -name '.*' -prune -o ! -type d -print0)
-
-  echo "Adding symlink..."
-  mkdir -p "$pkgdir/usr/share/doc"
-  ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
-}
-
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-docs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
