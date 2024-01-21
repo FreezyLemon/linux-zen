@@ -1,6 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-pkgbase=linux-zen
+pkgbase=linux-zen-custom
 pkgver=7.2.14.zen1
 pkgrel=2
 pkgdesc='Linux ZEN'
@@ -10,6 +10,11 @@ arch=(
 )
 license=(GPL-2.0-only)
 makedepends=(
+  # custom
+  clang
+  lld
+  llvm
+
   bc
   binutils
   cpio
@@ -29,13 +34,6 @@ makedepends=(
   xz
   zlib
   zstd
-
-  # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  python-yaml
-  texlive-latexextra
 )
 options=(
   !debug
@@ -57,7 +55,7 @@ b2sums=('2214cebaf37149fce36324429aa56f7dde474cb86d87a670b596d69fcdcc0e98adacaec
         'SKIP'
         '16857135f3022ca6d4536226944c94d5d18f30640c853885346216798efad190a2bc2e1094f7e234d1687dd8ee4ef4dcf985580bd08001d25c4329b0a950ad5b'
         'SKIP')
-b2sums_x86_64=('c031225ee7b64894f1248e2c3ad310be0f7b8fd4fdb24bed547338a90012f1d107bbb5ad9d6ffd85b4da5ce698d95cede2343e7fe502eb6d6b0b53eaffbbabd1')
+b2sums_x86_64=('965bc560275f2f6640dabfa1fe4a5bef846e02da750a152d6bd2a4069f6c8929e8cf5d55c336857873c203affa0b2c6bd864f025643f32a0cd88455cdf81a58f')
 
 # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
 sha256sums=('bb1b871ef95a8de10b3f7b7baf0e0d754abbf620f804b6caf860f226aa97647d'
@@ -68,6 +66,9 @@ sha256sums=('bb1b871ef95a8de10b3f7b7baf0e0d754abbf620f804b6caf860f226aa97647d'
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
+
+# custom
+export LLVM=1
 
 prepare() {
   cd $_srcname
@@ -89,6 +90,7 @@ prepare() {
   echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
+  #make nconfig
   diff -u ../config.$CARCH .config || :
 
   make -s kernelrelease > version
@@ -97,13 +99,7 @@ prepare() {
 
 build() {
   cd $_srcname
-
-  make htmldocs SPHINXOPTS=-QT &
-  local pid_docs=$!
-
   make all
-  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  wait $pid_docs
 }
 
 _package() {
@@ -141,7 +137,7 @@ _package() {
   echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
 
   echo "Installing modules..."
-  ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+  ZSTD_CLEVEL=1 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
     DEPMOD=/doesnt/exist modules_install  # Suppress depmod
 
   # remove build link
@@ -174,7 +170,7 @@ _package-headers() {
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux tools/bpf/bpftool/vmlinux.h
+    localversion.* version vmlinux
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/$karch" -m644 arch/$karch/Makefile
   cp -t "$builddir" -a scripts
@@ -228,9 +224,6 @@ _package-headers() {
     rm -r "$arch"
   done
 
-  echo "Removing documentation..."
-  rm -r "$builddir/Documentation"
-
   echo "Removing broken symlinks..."
   find -L "$builddir" -type l -printf 'Removing %P\n' -delete
 
@@ -260,32 +253,9 @@ _package-headers() {
   ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-docs() {
-  pkgdesc="Documentation for the $pkgdesc kernel"
-
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
-
-  echo "Installing documentation..."
-  local src dst
-  while read -rd '' src; do
-    dst="${src#Documentation/}"
-    dst="$builddir/Documentation/${dst#output/}"
-    install -Dm644 "$src" "$dst"
-  done < <(
-    find Documentation \( -name '.*' -o -name __pycache__ \) -prune \
-      -o \! -type d -print0
-  )
-
-  echo "Adding symlink..."
-  mkdir -p "$pkgdir/usr/share/doc"
-  ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
-}
-
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-docs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
