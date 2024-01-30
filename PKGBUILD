@@ -1,6 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-pkgbase=linux-zen
+pkgbase=linux-zen-custom
 pkgver=7.1.3.zen1
 pkgrel=2
 pkgdesc='Linux ZEN'
@@ -29,13 +29,6 @@ makedepends=(
   xz
   zlib
   zstd
-
-  # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  python-yaml
-  texlive-latexextra
 )
 options=(
   !debug
@@ -53,17 +46,20 @@ validpgpkeys=(
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-b2sums=('b6466e2798627522f0339c670a223b21266f4d4ede39163867c0f122295e54c5d24093abb51d5c6c6c917de0cb199836e81f45f7c391a5cc138cac2a519438e8'
-        'SKIP'
-        '6461423fe6626b613a3e90a968e124f2b957db922d9a550e364b37a9cc89209f3fd4a521cec09813b34cec9252e5c22ba6cc12994363ed7cce5af482bf93f03b'
-        'SKIP')
-b2sums_x86_64=('cbe8a3e1e434297807a8106ad65e5530041104b079ffb02c7f00d04e83dab72bc8b9c7bf4831031bfd331ca4c3ad5d220a41034d57cce7a2784884601c1ce458')
-
-# https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
 sha256sums=('be41c068e88f5242a19bccdbffbe077b18c47b45f627e2325504b4fab79dd1dc'
             'SKIP'
             '35c98d32621e15d96d0151f5c3d56f6c5bd34f959639d74df25ff212bd74a8cc'
             'SKIP')
+sha256sums_x86_64=('cbb19de2724bd491744dc859ef988f30ef011fa5c96cc5a79ebfe0d841f61c3a')
+b2sums=('b6466e2798627522f0339c670a223b21266f4d4ede39163867c0f122295e54c5d24093abb51d5c6c6c917de0cb199836e81f45f7c391a5cc138cac2a519438e8'
+        'SKIP'
+        '6461423fe6626b613a3e90a968e124f2b957db922d9a550e364b37a9cc89209f3fd4a521cec09813b34cec9252e5c22ba6cc12994363ed7cce5af482bf93f03b'
+        'SKIP')
+b2sums_x86_64=('854a5cf32434c35207b206ae0a1d0520f04c0276ad62a9998a2f096d0d807c9bbc2fb86fbb82e4f4a44e4535a3a48afe7f23141e881d2c4a6c8d2f595af1e5e1')
+
+# https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
+
+# https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -89,6 +85,7 @@ prepare() {
   echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
+  #make nconfig
   diff -u ../config.$CARCH .config || :
 
   make -s kernelrelease > version
@@ -98,8 +95,6 @@ prepare() {
 build() {
   cd $_srcname
   make all
-  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  make htmldocs SPHINXOPTS=-QT
 }
 
 _package() {
@@ -170,7 +165,7 @@ _package-headers() {
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux tools/bpf/bpftool/vmlinux.h
+    localversion.* version vmlinux
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/$karch" -m644 arch/$karch/Makefile
   cp -t "$builddir" -a scripts
@@ -191,17 +186,6 @@ _package-headers() {
 
   install -Dt "$builddir/drivers/md" -m644 drivers/md/*.h
   install -Dt "$builddir/net/mac80211" -m644 net/mac80211/*.h
-
-  # https://bugs.archlinux.org/task/13146
-  install -Dt "$builddir/drivers/media/i2c" -m644 drivers/media/i2c/msp3400-driver.h
-
-  # https://bugs.archlinux.org/task/20402
-  install -Dt "$builddir/drivers/media/usb/dvb-usb" -m644 drivers/media/usb/dvb-usb/*.h
-  install -Dt "$builddir/drivers/media/dvb-frontends" -m644 drivers/media/dvb-frontends/*.h
-  install -Dt "$builddir/drivers/media/tuners" -m644 drivers/media/tuners/*.h
-
-  # https://bugs.archlinux.org/task/71392
-  install -Dt "$builddir/drivers/iio/common/hid-sensors" -m644 drivers/iio/common/hid-sensors/*.h
 
   echo "Installing KConfig files..."
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
@@ -256,29 +240,9 @@ _package-headers() {
   ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-docs() {
-  pkgdesc="Documentation for the $pkgdesc kernel"
-
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
-
-  echo "Installing documentation..."
-  local src dst
-  while read -rd '' src; do
-    dst="${src#Documentation/}"
-    dst="$builddir/Documentation/${dst#output/}"
-    install -Dm644 "$src" "$dst"
-  done < <(find Documentation -name '.*' -prune -o ! -type d -print0)
-
-  echo "Adding symlink..."
-  mkdir -p "$pkgdir/usr/share/doc"
-  ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
-}
-
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-docs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
