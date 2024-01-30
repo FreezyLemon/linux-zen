@@ -1,6 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-pkgbase=linux-zen
+pkgbase=linux-zen-custom
 pkgver=6.15.7.zen1
 pkgrel=1
 pkgdesc='Linux ZEN'
@@ -8,6 +8,11 @@ url='https://github.com/zen-kernel/zen-kernel'
 arch=(x86_64)
 license=(GPL-2.0-only)
 makedepends=(
+  # custom
+  clang
+  lld
+  llvm
+
   bc
   cpio
   gettext
@@ -20,13 +25,6 @@ makedepends=(
   rust-src
   tar
   xz
-
-  # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  python-yaml
-  texlive-latexextra
 )
 options=(
   !debug
@@ -49,12 +47,12 @@ sha256sums=('3507dd105b0a0e1101bd43d294472fccf853429a259a5fa7c67467bba318f8e9'
             'SKIP'
             'c8f25a04a468c24d04fb9f7b12aa15352f635000634642ca1eec3b93d9f4375a'
             'SKIP'
-            'eb0a3b29963ffeac043948bacc8bf17f35e73edf8f3b113a2281c19b803cd93f')
+            '60da5013d5e02bed1668fde0513adcfce390b696069458047f25747a7419c4f3')
 b2sums=('da0d7e22e88e5d46636bc53ebaaccbb986b98d41ee786fe87bff6777dd15426b3fdb254e628674871c679c7942971e9ad10ebdfed6666e7127dfb292f60125ff'
         'SKIP'
         '841095102aa7d55dcac62757958b67f7399d35f630678e0033375b28864b7020fbaa3d185a7768d4c450a9c1fc3683e66b5fa3b87b6d859157105b713b9bcb63'
         'SKIP'
-        'caee500359c73615ea80d232f15d9278df5d2096db4a723ce4312b90f31fde1d20a50a09c4c2694b666f8702808245b271f4919213bd35e5cb3065efb572b6fb')
+        '92c77c49856a28ae60a16739cd8a3445ba9392701aab09ecd2e43cc1af50d55d16156ec314c906a48d440039d3297f3c9c7c0c6d6dac2f103a89c6fe1099bdec')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -79,18 +77,17 @@ prepare() {
 
   echo "Setting config..."
   cp ../config .config
-  make olddefconfig
+  #make LLVM=1 nconfig
+  make LLVM=1 olddefconfig
   diff -u ../config .config || :
 
-  make -s kernelrelease > version
+  make LLVM=1 -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
 }
 
 build() {
   cd $_srcname
-  make all
-  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  make htmldocs
+  make LLVM=1 CC="clang" all
 }
 
 _package() {
@@ -121,13 +118,13 @@ _package() {
   echo "Installing boot image..."
   # systemd expects to find the kernel here to allow hibernation
   # https://github.com/systemd/systemd/commit/edda44605f06a41fb86b7ab8128dcf99161d2344
-  install -Dm644 "$(make -s image_name)" "$modulesdir/vmlinuz"
+  install -Dm644 "$(make LLVM=1 -s image_name)" "$modulesdir/vmlinuz"
 
   # Used by mkinitcpio to name the kernel
   echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
 
   echo "Installing modules..."
-  ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+  ZSTD_CLEVEL=19 make LLVM=1 INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
     DEPMOD=/doesnt/exist modules_install  # Suppress depmod
 
   # remove build link
@@ -143,7 +140,7 @@ _package-headers() {
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux tools/bpf/bpftool/vmlinux.h
+    localversion.* version vmlinux
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/x86" -m644 arch/x86/Makefile
   cp -t "$builddir" -a scripts
@@ -153,7 +150,7 @@ _package-headers() {
   install -Dt "$builddir/tools/objtool" tools/objtool/objtool
 
   # required when DEBUG_INFO_BTF_MODULES is enabled
-  install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
+  # install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
 
   echo "Installing headers..."
   cp -t "$builddir" -a include
@@ -162,17 +159,6 @@ _package-headers() {
 
   install -Dt "$builddir/drivers/md" -m644 drivers/md/*.h
   install -Dt "$builddir/net/mac80211" -m644 net/mac80211/*.h
-
-  # https://bugs.archlinux.org/task/13146
-  install -Dt "$builddir/drivers/media/i2c" -m644 drivers/media/i2c/msp3400-driver.h
-
-  # https://bugs.archlinux.org/task/20402
-  install -Dt "$builddir/drivers/media/usb/dvb-usb" -m644 drivers/media/usb/dvb-usb/*.h
-  install -Dt "$builddir/drivers/media/dvb-frontends" -m644 drivers/media/dvb-frontends/*.h
-  install -Dt "$builddir/drivers/media/tuners" -m644 drivers/media/tuners/*.h
-
-  # https://bugs.archlinux.org/task/71392
-  install -Dt "$builddir/drivers/iio/common/hid-sensors" -m644 drivers/iio/common/hid-sensors/*.h
 
   echo "Installing KConfig files..."
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
@@ -225,29 +211,9 @@ _package-headers() {
   ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-docs() {
-  pkgdesc="Documentation for the $pkgdesc kernel"
-
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
-
-  echo "Installing documentation..."
-  local src dst
-  while read -rd '' src; do
-    dst="${src#Documentation/}"
-    dst="$builddir/Documentation/${dst#output/}"
-    install -Dm644 "$src" "$dst"
-  done < <(find Documentation -name '.*' -prune -o ! -type d -print0)
-
-  echo "Adding symlink..."
-  mkdir -p "$pkgdir/usr/share/doc"
-  ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
-}
-
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-docs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
