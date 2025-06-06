@@ -1,7 +1,7 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 pkgbase=linux-zen
-pkgver=6.14.10.zen1
+pkgver=6.15.1.zen1
 pkgrel=1
 pkgdesc='Linux ZEN'
 url='https://github.com/zen-kernel/zen-kernel'
@@ -45,16 +45,16 @@ validpgpkeys=(
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
 # https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
-sha256sums=('de8b97cfeae74c22f832ee4ca2333c157cc978d98baa122f0ee9c01796a2fe43'
+sha256sums=('44f1bb84fe512e7bafe0e6dc85d38ec1c6c8fcbe97ccb51d8c19930b799f0d64'
             'SKIP'
-            '0b692e5879f60b04b0d41a145c45b2985adebc1e9ac335fafe0efbafa33d804e'
+            '73010aacde62645343e6426b54a589b507515fe94903cf66de54a6ff7a47bafc'
             'SKIP'
-            'bc4996e43b77c188605ee9e535ad7a8482dd8020e6833a9e99bbfdb6a2a87478')
-b2sums=('d94b0ca4eaf302d5b28e8dc7df680b1f6bf98c622d3b7785353597c3bb032bde75ffa7bbc9c6e80583e21c1f47bd4ba635489a1ee1aedbebfdde50223233b053'
+            '3486001c1f767181daa69164fee64bb44063cdfa6ff31655318d559a903643fc')
+b2sums=('bce19089e6c7b7e6f905855940b69a6edb68818caa25de866a3673082ec9e8ad95f842689db185a9271eac5cccd122212c05711f99b4d0c2e0a1b7abc895bc24'
         'SKIP'
-        '4ee92dc3b1df250ce446a8bde177cbe74d97f649f16377ece3a73ad29836531626f597ea4132b2832d43ea98dc6e8f890c7e56297d7af9def8af1dd17eac08ca'
+        'b83d6d9414b9c0803c2486a84b8d4a7cc943929e5c07c51a1358fb443b261d021417be3e6b67246076b65f4aff0515015068af55fee77efe9358bb4bc85cb3df'
         'SKIP'
-        'd2246be592f7d6009919719408521bd9f981cf47f6a43e4ea6f3048e15f69a0aee9ac3fdd1c1c67ee3fb841bfdd3c29d0abf1dbc264b46a85b15bac43cc01030')
+        '92be0ac8cb861d9674747f4795c02f3173eecd69d2a8647477c79cd4233188cdf62b3ea7a7d84fd146e3fcbd09ab435138f962302b5cc13165ff8aace71f6361')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -108,7 +108,6 @@ _package() {
   provides=(
     KSMBD-MODULE
     NTSYNC-MODULE
-    UKSMD-BUILTIN
     VHBA-MODULE
     VIRTUALBOX-GUEST-MODULES
     WIREGUARD-MODULE
