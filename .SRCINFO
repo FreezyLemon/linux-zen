@@ -1,7 +1,7 @@
 pkgbase = linux-zen
 	pkgdesc = Linux ZEN
 	pkgver = 6.15.1.zen1
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/zen-kernel/zen-kernel
 	arch = x86_64
 	license = GPL-2.0-only
@@ -36,12 +36,12 @@ pkgbase = linux-zen
 	sha256sums = SKIP
 	sha256sums = 73010aacde62645343e6426b54a589b507515fe94903cf66de54a6ff7a47bafc
 	sha256sums = SKIP
-	sha256sums = 3486001c1f767181daa69164fee64bb44063cdfa6ff31655318d559a903643fc
+	sha256sums = 776057f881586faadec3a81263bb5498b028a135c55940b75959cb868c2aace2
 	b2sums = bce19089e6c7b7e6f905855940b69a6edb68818caa25de866a3673082ec9e8ad95f842689db185a9271eac5cccd122212c05711f99b4d0c2e0a1b7abc895bc24
 	b2sums = SKIP
 	b2sums = b83d6d9414b9c0803c2486a84b8d4a7cc943929e5c07c51a1358fb443b261d021417be3e6b67246076b65f4aff0515015068af55fee77efe9358bb4bc85cb3df
 	b2sums = SKIP
-	b2sums = 92be0ac8cb861d9674747f4795c02f3173eecd69d2a8647477c79cd4233188cdf62b3ea7a7d84fd146e3fcbd09ab435138f962302b5cc13165ff8aace71f6361
+	b2sums = 4a9d55abd65e146dd3596735e78fac7ae73fd54f02a0d687f1b19715b9725cf73be90eb9340f259670e915697f08666646875f72cfa2b31937d32230cd7b6b88
 
 pkgname = linux-zen
 	pkgdesc = The Linux ZEN kernel and modules
