@@ -29,7 +29,8 @@ makedepends=(
   texlive-latexextra
 )
 options=(
-  zipkmod
+  !debug
+  !strip
 )
 _srcname=linux-${pkgver%.*}
 _srctag=v${pkgver%.*}-${pkgver##*.}
@@ -48,12 +49,12 @@ sha256sums=('d0a78bf3f0d12aaa10af3b5adcaed5bc767b5b78705e5ef885d5e930b72e25d5'
             'SKIP'
             'e55a3189ead3e6704d5444e2bc76ec80565dd9c4cdcfdf6d59f8612f7fe907bb'
             'SKIP'
-            '3a27b6b3fe2fdc234d9267eed27217559ee06171ec561ab196478642c1372bd3')
+            '5c2400131d304ed0808e61d1a5369cb0f2bc9aafc38e2beda2fa5acd72fba02d')
 b2sums=('6ea6a7235ee59f876b015c6fda0f2772980c6ea58240689ce581182262387cbef3aed3c95ced66cdb56479cbd83961fbcbdfdff09f049941c3daf047710adb61'
         'SKIP'
         'c7896df084ad41b59b1e6497dbc18176e048c9ccd84ab1ca4a05135d5e552f9fcfbeab278503c295211462a932cd991e70db4e41f7a31c8ad44844d1e0911000'
         'SKIP'
-        'ea62800e60be1b0063dec742e741044fce3a8be80922a16acc67bb9e80719a37477385f4a59d0555ff18d9fd1d6d77c3b05bdc29a90e85201b4a9503ee408783')
+        '833c0d7f796559f600074bd814482722baee2aa9e58ebf044b896223e1b4d45f37a1e2dd8c213cad29a13cd9412be21525384a6562e08dcdeb79fdb3aff217ae')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -126,8 +127,8 @@ _package() {
   echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
 
   echo "Installing modules..."
-  # Suppress depmod
-  make INSTALL_MOD_PATH="$pkgdir/usr" DEPMOD=/doesnt/exist modules_install
+  ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+    DEPMOD=/doesnt/exist modules_install  # Suppress depmod
 
   # remove build link
   rm "$modulesdir"/build
@@ -200,6 +201,24 @@ _package-headers() {
 
   echo "Removing loose objects..."
   find "$builddir" -type f -name '*.o' -printf 'Removing %P\n' -delete
+
+  echo "Stripping build tools..."
+  local file
+  while read -rd '' file; do
+    case "$(file -Sib "$file")" in
+      application/x-sharedlib\;*)      # Libraries (.so)
+        strip -v $STRIP_SHARED "$file" ;;
+      application/x-archive\;*)        # Libraries (.a)
+        strip -v $STRIP_STATIC "$file" ;;
+      application/x-executable\;*)     # Binaries
+        strip -v $STRIP_BINARIES "$file" ;;
+      application/x-pie-executable\;*) # Relocatable binaries
+        strip -v $STRIP_SHARED "$file" ;;
+    esac
+  done < <(find "$builddir" -type f -perm -u+x ! -name vmlinux -print0)
+
+  echo "Stripping vmlinux..."
+  strip -v $STRIP_STATIC "$builddir/vmlinux"
 
   echo "Adding symlink..."
   mkdir -p "$pkgdir/usr/src"
