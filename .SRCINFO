@@ -61,6 +61,7 @@ pkgname = linux-zen
 pkgname = linux-zen-headers
 	pkgdesc = Headers and scripts for building modules for the Linux ZEN kernel
 	depends = pahole
+	provides = LINUX-HEADERS
 
 pkgname = linux-zen-docs
 	pkgdesc = Documentation for the Linux ZEN kernel
