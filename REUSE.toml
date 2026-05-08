@@ -22,10 +22,3 @@ path = [
 ]
 SPDX-FileCopyrightText = "Arch Linux contributors"
 SPDX-License-Identifier = "0BSD"
-
-[[annotations]]
-path = [
-    "0001-xfrm-esp-avoid-in-place-decrypt-on-shared-skb-frags.patch",
-]
-SPDX-FileCopyrightText = "linux-zen contributors"
-SPDX-License-Identifier = "GPL-2.0-only"

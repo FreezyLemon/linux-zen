@@ -1,8 +1,8 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 pkgbase=linux-zen
-pkgver=7.0.3.zen1
-pkgrel=3
+pkgver=7.0.5.zen1
+pkgrel=1
 pkgdesc='Linux ZEN'
 url='https://github.com/zen-kernel/zen-kernel'
 arch=(
@@ -46,7 +46,6 @@ _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
-  0001-xfrm-esp-avoid-in-place-decrypt-on-shared-skb-frags.patch
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
@@ -54,20 +53,17 @@ validpgpkeys=(
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-sha256sums=('0bedadbf5788693ddebbcc913c893f1a97349af79ddde7144c2a80b401959f1c'
-            'SKIP'
-            '19c98919f45324b0cec0eb7479113e2cf5c3e0c83026c76f38a4bbe84bc4daa2'
-            'SKIP'
-            '4b7d2d8e373b647712e88648696ecf6cbfe104f6b6ae951ed5d12094456a38f8')
-sha256sums_x86_64=('a3c68c8cc7f563b38ad2cf33d99f9636db70d2aebe67236c094524a5ff90143e')
-b2sums=('51eebd3aa3c64779308b0781818fd91921c1a7b0c3ffd361dbff01f8853f1cea7d4c70f6ee2ae3b7817aeca7605b63f12b0fa422d22c0a50fb2306553c49eda4'
+b2sums=('10b9e0c47da78d605d1ff45054e0693045bcbfe9ab1437ababe9b58383a193c89d5a36f9ee806266c743ae8a320ac60620b3e306751ead2e1a77150cf0d985eb'
         'SKIP'
-        '59a5ec7b06e0bbd587a0f25f83dccdee41c2964ccc5167804c5f4148c97d2b0a34d9679e6814a6dec6d6a81f273f7f6ee2162a8526dc64d825bf9f9c117644e7'
-        'SKIP'
-        '8b4f5121660373fe75de7351035d9e31c9ffc162e8e7061b0ae06bfe741e2492f44962da8a66b17df239579b90011e852cbb5b7b703f04bff873e7a9e5909b6b')
-b2sums_x86_64=('957b90bcefbf859974bae78a1845a2b2cea8731c03a3bf04ba6296053a62ac8a87aae1490f3910a992e98a57506286ee53a00afe1a9d8c157c37e1d75ec3faff')
+        'c837cd816621e45352f80216dd1424bc37a6bb59c08648f7d222b23eca40a1791d761136aee294980cc9daee78516608fc7d5084aa8bb67e2fa0f3fcc2921004'
+        'SKIP')
+b2sums_x86_64=('88686cc78c15884c82304f09ecefb90c866e8b34fe5c93e72b3fcb313c8b57023177c973b2ab742aa3197b0cd4865f5657294832dc7024fb799f04826ce35298')
 
 # https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
+sha256sums=('965fb0a1c1675399fc60c6063b227c0523041b5f9a662b66462f1212c438ac3c'
+            'SKIP'
+            '27ecec5a7f5fd3e5e8a6b57a5dd028deba25999a0ef6b00faaae1aaaf698aaa8'
+            'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
