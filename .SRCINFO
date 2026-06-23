@@ -47,7 +47,7 @@ pkgbase = linux-zen
 	b2sums = af75f1c66a0e02939e9271a619f4696315257802265db29ba5ecc79c83e481edf3be81bf238fb59dfea02983aae518c8a416238fd98939892e995049d6fc67dd
 	b2sums = SKIP
 	source_x86_64 = config.x86_64
-	b2sums_x86_64 = b62e808d7db5620c517817d218cfbcab248395c9b131bbc23dd12479c8cccfccd5211aa6770deec3cc91e756cb1f179d3f20eef3d4fdef6cda0f4989114acddc
+	b2sums_x86_64 = dff8114fc48c0ce164a7213a85b88658d6493858f4e612ac522edd9d5274fe133234a2106d792608d05dd0e0eeb1844bcc043c26c18c7c64239f763bf69e4a28
 
 pkgname = linux-zen
 	pkgdesc = The Linux ZEN kernel and modules
