@@ -57,7 +57,7 @@ b2sums=('b6466e2798627522f0339c670a223b21266f4d4ede39163867c0f122295e54c5d24093a
         'SKIP'
         'cb113cb637d9bc2ba60215c6ecd4d5c62c8fe2add15ff6eff38bd421b0f7da62b5e8f4a1c29b348eb37587a48162e14264f1775d702ff05b61eb83d058bf4a09'
         'SKIP')
-b2sums_x86_64=('39aa49722aa181407781d0c91427a9af47be05b8a483f2e28bf2954cea0389036341903a42062ba6864fc538e87c62b26551a807c93a8a925b1451efc930074d')
+b2sums_x86_64=('47cfb269ddd885e6bdf7724327469984db16befb38f10753cd4500701bb35590c28e1b0d937662b2ff2523994dc4376235ca6f47c006fc3811505d30e9054725')
 
 # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
 sha256sums=('be41c068e88f5242a19bccdbffbe077b18c47b45f627e2325504b4fab79dd1dc'
@@ -97,9 +97,13 @@ prepare() {
 
 build() {
   cd $_srcname
+
+  make htmldocs SPHINXOPTS=-QT &
+  local pid_docs=$!
+
   make all
   make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  make htmldocs SPHINXOPTS=-QT
+  wait $pid_docs
 }
 
 _package() {
@@ -206,8 +210,8 @@ _package-headers() {
   echo "Installing KConfig files..."
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
 
-  echo "Installing Rust files..."
   if [[ $(scripts/config -s CONFIG_RUST) = y ]]; then
+    echo "Installing Rust files..."
     install -Dt "$builddir/rust" -m644 rust/*.rmeta
     install -Dt "$builddir/rust" rust/*.so
   fi
