@@ -2,7 +2,7 @@
 
 pkgbase=linux-zen
 pkgver=7.1.5.zen1
-pkgrel=1
+pkgrel=2
 pkgdesc='Linux ZEN'
 url='https://github.com/zen-kernel/zen-kernel'
 arch=(
